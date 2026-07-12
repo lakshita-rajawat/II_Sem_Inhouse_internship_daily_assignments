@@ -1,0 +1,660 @@
+
+<?php
+/**
+ * admin.php
+ * Administrative Modules for College ERP
+ */
+if (!defined('APP_NAME')) die();
+function handleAdminDashboard() {
+    requireLogin('admin');
+    $stats = [
+        'students' => dbCount("SELECT COUNT(*) FROM students WHERE status='Active'"),
+        'teachers' => dbCount("SELECT COUNT(*) FROM teachers WHERE is_active=1"),
+        'courses'  => dbCount("SELECT COUNT(*) FROM courses WHERE is_active=1"),
+        'exams'    => dbCount("SELECT COUNT(*) FROM exams WHERE status='Scheduled'")
+    ];
+    renderHeader('Admin Dashboard');
+    ?>
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value"><?= $stats['students'] ?></div>
+            <div>Active Students</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value"><?= $stats['teachers'] ?></div>
+            <div>Active Teachers</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value"><?= $stats['courses'] ?></div>
+            <div>Active Courses</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value"><?= $stats['exams'] ?></div>
+            <div>Scheduled Exams</div>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handleAdminDepts() {
+    requireLogin('admin');
+    
+    // Quick handle of POST for brevity
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_dept'])) {
+        dbExecute("INSERT INTO departments (dept_code, dept_name) VALUES (?, ?)", [$_POST['code'], $_POST['name']]);
+        setFlash('success', 'Department added.');
+        redirect('?page=admin_depts');
+    }
+    
+    $depts = dbFetchAll("SELECT * FROM departments");
+    renderHeader('Departments');
+    ?>
+    <div class="row">
+        <div class="col">
+            <div class="erp-card">
+                <div class="erp-card-header">Add Department</div>
+                <div class="erp-card-body">
+                    <form method="POST">
+                        <input type="text" name="code" class="erp-form-control" placeholder="Code (e.g. CSE)" required>
+                        <input type="text" name="name" class="erp-form-control" placeholder="Name" required>
+                        <button type="submit" name="save_dept" class="btn btn-primary">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="erp-card">
+                <div class="erp-card-header">List</div>
+                <div class="erp-card-body p-0">
+                    <table class="erp-table">
+                        <tr><th>Code</th><th>Name</th></tr>
+                        <?php foreach($depts as $d): ?>
+                            <tr><td><?= esc($d['dept_code']) ?></td><td><?= esc($d['dept_name']) ?></td></tr>
+                        <?php endforeach; ?>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handleAdminSubjects() {
+    requireLogin('admin');
+    $subs = dbFetchAll("SELECT s.*, c.course_name FROM subjects s LEFT JOIN courses c ON s.course_id = c.id");
+    renderHeader('Subjects');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-header">Subjects List</div>
+        <div class="erp-card-body p-0">
+            <table class="erp-table">
+                <tr><th>Code</th><th>Name</th><th>Course</th><th>Sem</th></tr>
+                <?php foreach($subs as $s): ?>
+                    <tr><td><?= esc($s['sub_code']) ?></td><td><?= esc($s['sub_name']) ?></td><td><?= esc($s['course_name']) ?></td><td><?= $s['sem_number'] ?></td></tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handleAdminTeachers() {
+    requireLogin('admin');
+    $teachers = dbFetchAll("SELECT * FROM teachers");
+    renderHeader('Teachers');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-header">Teachers Directory</div>
+        <div class="erp-card-body p-0">
+            <table class="erp-table">
+                <tr><th>ID</th><th>Name</th><th>Email</th><th>Status</th></tr>
+                <?php foreach($teachers as $t): ?>
+                    <tr><td><?= esc($t['teacher_id']) ?></td><td><?= esc($t['name']) ?></td><td><?= esc($t['email']) ?></td><td><?= $t['is_active']?'Active':'Inactive' ?></td></tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handleAdminStudents() {
+    requireLogin('admin');
+    $students = dbFetchAll("SELECT * FROM students");
+    renderHeader('Students');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-header">Students Directory</div>
+        <div class="erp-card-body p-0">
+            <table class="erp-table">
+                <tr><th>Roll</th><th>Name</th><th>Email</th><th>Sem</th></tr>
+                <?php foreach($students as $s): ?>
+                    <tr><td><?= esc($s['roll_number']) ?></td><td><?= esc($s['name']) ?></td><td><?= esc($s['email']) ?></td><td><?= $s['current_sem'] ?></td></tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handleAdminExams() {
+    requireLogin('admin');
+    $exams = dbFetchAll("SELECT * FROM exams");
+    renderHeader('Exams');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-header">Exams Schedule</div>
+        <div class="erp-card-body p-0">
+            <table class="erp-table">
+                <tr><th>Name</th><th>Start</th><th>End</th><th>Status</th></tr>
+                <?php foreach($exams as $e): ?>
+                    <tr><td><?= esc($e['exam_name']) ?></td><td><?= fmtDate($e['start_date']) ?></td><td><?= fmtDate($e['end_date']) ?></td><td><?= esc($e['status']) ?></td></tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handleAdminFees() {
+    requireLogin('admin');
+    $fees = dbFetchAll("SELECT p.*, f.head_name, s.name as student_name FROM fee_payments p JOIN fee_heads f ON p.fee_head_id = f.id JOIN students s ON p.student_id = s.id");
+    renderHeader('Fees Overview');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-header">Recent Payments</div>
+        <div class="erp-card-body p-0">
+            <table class="erp-table">
+                <tr><th>Student</th><th>Receipt</th><th>Head</th><th>Amount</th></tr>
+                <?php foreach($fees as $f): ?>
+                    <tr><td><?= esc($f['student_name']) ?></td><td><?= esc($f['receipt_no']) ?></td><td><?= esc($f['head_name']) ?></td><td><?= $f['amount_paid'] ?></td></tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handleAdminTimetable() {
+    requireLogin('admin');
+    $tt = dbFetchAll("SELECT t.*, c.course_name, s.sub_name FROM timetable t JOIN courses c ON t.course_id=c.id JOIN subjects s ON t.subject_id=s.id LIMIT 50");
+    renderHeader('Timetable Slots');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-header">All Slots</div>
+        <div class="erp-card-body p-0">
+            <table class="erp-table">
+                <tr><th>Course</th><th>Day</th><th>Time</th><th>Subject</th></tr>
+                <?php foreach($tt as $t): ?>
+                    <tr><td><?= esc($t['course_name']) ?></td><td><?= esc($t['day_of_week']) ?></td><td><?= esc($t['start_time']) ?></td><td><?= esc($t['sub_name']) ?></td></tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+<?php
+/**
+ * core.php
+ * Contains Configuration, Database, Authentication, Helpers, and Layout Templates.
+ */
+// ==========================================
+// CONFIGURATION
+// ==========================================
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'college_erp');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+define('DB_CHARSET', 'utf8mb4');
+define('APP_NAME', 'College ERP');
+define('APP_URL',  'http://localhost/college-erp-compact');
+define('ROOT_PATH',   __DIR__);
+define('UPLOAD_PATH', ROOT_PATH . '/uploads/');
+define('SESSION_NAME',    'erp_session');
+define('CSRF_TOKEN_NAME', '_csrf_token');
+define('DEFAULT_PASS',    'College@123');
+define('COLLEGE_NAME',    'College ERP University');
+define('TIMEZONE',        'Asia/Kolkata');
+define('DATE_FMT',        'd M Y');
+date_default_timezone_set(TIMEZONE);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+error_reporting(E_ALL);
+// ==========================================
+// DATABASE (PDO)
+// ==========================================
+function db(): PDO {
+    static $pdo = null;
+    if ($pdo === null) {
+        $dsn = 'mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset='.DB_CHARSET;
+        $opts = [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC,PDO::ATTR_EMULATE_PREPARES=>false];
+        try { $pdo = new PDO($dsn, DB_USER, DB_PASS, $opts); }
+        catch (PDOException $e) { http_response_code(500); die('<h2>DB Connection Failed</h2>'); }
+    }
+    return $pdo;
+}
+function dbExecute(string $sql, array $params = []): int|bool {
+    $stmt = db()->prepare($sql); $stmt->execute($params);
+    $id = db()->lastInsertId(); return $id ? (int)$id : true;
+}
+function dbFetchAll(string $sql, array $params = []): array {
+    $stmt = db()->prepare($sql); $stmt->execute($params); return $stmt->fetchAll();
+}
+function dbFetchOne(string $sql, array $params = []): ?array {
+    $stmt = db()->prepare($sql); $stmt->execute($params); $row = $stmt->fetch(); return $row ?: null;
+}
+function dbCount(string $sql, array $params = []): int {
+    $stmt = db()->prepare($sql); $stmt->execute($params); return (int)$stmt->fetchColumn();
+}
+// ==========================================
+// AUTHENTICATION & SECURITY
+// ==========================================
+if (session_status() === PHP_SESSION_NONE) {
+    session_name(SESSION_NAME);
+    session_set_cookie_params(['lifetime'=>0,'path'=>'/','httponly'=>true,'samesite'=>'Lax']);
+    session_start();
+}
+function requireLogin(string $role = ''): void {
+    if (empty($_SESSION['user_id'])) { redirect(APP_URL.'/?page=login'); }
+    if ($role && ($_SESSION['user_role']??'') !== $role) { die('<h2>403 - Access Denied</h2>'); }
+}
+function currentUserId(): int { return (int)($_SESSION['user_id']??0); }
+function currentRole(): string { return $_SESSION['user_role']??''; }
+function entityId(): int { return (int)($_SESSION['entity_id']??0); }
+function csrfToken(): string {
+    if (empty($_SESSION[CSRF_TOKEN_NAME])) $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(32));
+    return $_SESSION[CSRF_TOKEN_NAME];
+}
+function validateCsrf(): bool {
+    $token = $_POST[CSRF_TOKEN_NAME] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    return hash_equals(csrfToken(), $token);
+}
+function setFlash(string $type, string $msg): void { $_SESSION['_flash'] = ['type'=>$type,'msg'=>$msg]; }
+function getFlash(): ?array {
+    if (!empty($_SESSION['_flash'])) { $f=$_SESSION['_flash']; unset($_SESSION['_flash']); return $f; }
+    return null;
+}
+function redirect(string $url): never { header('Location: '.$url); exit; }
+function esc(?string $str): string { return htmlspecialchars((string)($str??''),ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8'); }
+// ==========================================
+// HELPERS
+// ==========================================
+function fmtDate(?string $date, string $format = DATE_FMT): string {
+    if (!$date || $date==='0000-00-00') return '—';
+    return date($format, strtotime($date));
+}
+function statusBadge(string $label, string $cls = 'badge-present'): string {
+    return '<span class="status-badge '.esc($cls).'">'.esc($label).'</span>';
+}
+function uploadFile(string $field): string {
+    if (empty($_FILES[$field]['tmp_name'])) return '';
+    $file = $_FILES[$field];
+    if ($file['error'] !== UPLOAD_ERR_OK) return '';
+    $ext = pathinfo($file['name'],PATHINFO_EXTENSION);
+    $name = uniqid('',true).'.'.strtolower($ext);
+    if (!is_dir(UPLOAD_PATH)) mkdir(UPLOAD_PATH,0755,true);
+    move_uploaded_file($file['tmp_name'],UPLOAD_PATH.$name);
+    return $name;
+}
+// ==========================================
+// LAYOUT: HEADER
+// ==========================================
+function renderHeader(string $pageTitle = 'Dashboard'): void {
+    $role = currentRole();
+    $flash = getFlash();
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= esc($pageTitle) ?> | <?= esc(APP_NAME) ?></title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS INLINE */
+        :root {
+            --primary: #7c3aed; --primary-light: #a78bfa; --primary-dark: #5b21b6;
+            --accent: #06b6d4; --success: #10b981; --danger: #f43f5e; --warning: #f59e0b; --info: #3b82f6;
+            --bg: #0f0f1a; --bg-card: #1a1a2e; --bg-sidebar: #12122b; --bg-hover: #1f1f3a; --bg-input: #16213e;
+            --border: rgba(255,255,255,0.07); --text: #e2e8f0; --text-muted: #94a3b8;
+            --sidebar-w: 260px; --topbar-h: 64px; --radius: 12px; --transition: 0.2s;
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;min-height:100vh;}
+        a{color:var(--primary-light);text-decoration:none;transition:var(--transition);} a:hover{color:var(--primary);}
+        .erp-wrapper{display:flex;min-height:100vh;}
+        .erp-sidebar{width:var(--sidebar-w);background:var(--bg-sidebar);border-right:1px solid var(--border);position:fixed;top:0;left:0;bottom:0;z-index:100;}
+        .sidebar-brand{padding:1.5rem;border-bottom:1px solid var(--border);font-weight:700;font-size:1.2rem;color:var(--text);}
+        .sidebar-nav{padding:1rem 0;}
+        .nav-item{display:block;padding:0.75rem 1.5rem;color:var(--text-muted);border-left:3px solid transparent;}
+        .nav-item:hover,.nav-item.active{color:var(--text);background:var(--bg-hover);border-left-color:var(--primary);}
+        .erp-main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;}
+        .erp-topbar{height:var(--topbar-h);background:var(--bg-sidebar);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;justify-content:space-between;}
+        .erp-content{padding:2rem;}
+        .page-title{font-size:1.5rem;font-weight:700;margin-bottom:1.5rem;}
+        .erp-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1.5rem;}
+        .erp-card-header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);font-weight:600;}
+        .erp-card-body{padding:1.5rem;}
+        .erp-table{width:100%;border-collapse:collapse;}
+        .erp-table th, .erp-table td{padding:1rem;border-bottom:1px solid var(--border);text-align:left;}
+        .erp-table th{color:var(--text-muted);font-weight:600;font-size:0.85rem;text-transform:uppercase;}
+        .btn{display:inline-block;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;border:none;background:var(--bg-hover);color:var(--text);transition:0.2s;}
+        .btn-primary{background:var(--primary);color:#fff;}
+        .btn-primary:hover{background:var(--primary-dark);}
+        .btn-danger{background:var(--danger);color:#fff;}
+        .erp-form-control, .erp-form-select{width:100%;padding:0.6rem 1rem;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;color:var(--text);margin-bottom:1rem;}
+        .erp-form-control:focus{outline:none;border-color:var(--primary);}
+        .status-badge{padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:600;background:rgba(255,255,255,0.1);}
+        .badge-present{background:rgba(16,185,129,0.2);color:#6ee7b7;}
+        .badge-absent{background:rgba(244,63,94,0.2);color:#fda4af;}
+        .flash{padding:1rem;border-radius:6px;margin-bottom:1rem;}
+        .flash-success{background:rgba(16,185,129,0.2);color:#6ee7b7;border:1px solid #10b981;}
+        .flash-danger{background:rgba(244,63,94,0.2);color:#fda4af;border:1px solid #f43f5e;}
+        .row{display:flex;flex-wrap:wrap;margin:-0.5rem;}
+        .col{flex:1;padding:0.5rem;}
+        .col-half{width:50%;padding:0.5rem;}
+        
+        /* Dashboard Stats */
+        .stat-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.5rem;}
+        .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;text-align:center;}
+        .stat-value{font-size:2rem;font-weight:700;color:var(--primary-light);}
+        
+        /* Timetable Grid */
+        .tt-slot{background:var(--bg-hover);padding:0.5rem;border-radius:6px;margin:0.25rem;display:inline-block;min-width:120px;border-left:3px solid var(--primary);}
+    </style>
+</head>
+<body>
+<?php if ($role): ?>
+<div class="erp-wrapper">
+    <aside class="erp-sidebar">
+        <div class="sidebar-brand"><?= esc(COLLEGE_NAME) ?></div>
+        <nav class="sidebar-nav">
+            <?php if($role==='admin'): ?>
+                <a href="?page=admin_dash" class="nav-item">Dashboard</a>
+                <a href="?page=admin_depts" class="nav-item">Departments & Courses</a>
+                <a href="?page=admin_subjects" class="nav-item">Subjects</a>
+                <a href="?page=admin_teachers" class="nav-item">Teachers</a>
+                <a href="?page=admin_students" class="nav-item">Students</a>
+                <a href="?page=admin_exams" class="nav-item">Exams</a>
+                <a href="?page=admin_fees" class="nav-item">Fees</a>
+                <a href="?page=admin_timetable" class="nav-item">Timetable</a>
+            <?php elseif($role==='teacher'): ?>
+                <a href="?page=teacher_dash" class="nav-item">Dashboard</a>
+                <a href="?page=portal_mark_att" class="nav-item">Mark Attendance</a>
+                <a href="?page=portal_marks_entry" class="nav-item">Enter Marks</a>
+                <a href="?page=portal_timetable" class="nav-item">Timetable</a>
+            <?php elseif($role==='student'): ?>
+                <a href="?page=student_dash" class="nav-item">Dashboard</a>
+                <a href="?page=portal_marksheet" class="nav-item">Marksheet</a>
+                <a href="?page=portal_fees" class="nav-item">Fee History</a>
+                <a href="?page=portal_timetable" class="nav-item">Timetable</a>
+            <?php endif; ?>
+        </nav>
+    </aside>
+    <main class="erp-main">
+        <header class="erp-topbar">
+            <div class="page-title" style="margin:0;"><?= esc($pageTitle) ?></div>
+            <div>
+                <span style="margin-right:1rem;color:var(--text-muted);"><?= currentRole() ?></span>
+                <a href="?page=logout" class="btn btn-danger">Logout</a>
+            </div>
+        </header>
+        <div class="erp-content">
+            <?php if($flash): ?>
+                <div class="flash flash-<?= $flash['type'] ?>"><?= esc($flash['msg']) ?></div>
+            <?php endif; ?>
+<?php else: ?>
+    <!-- Non-authenticated pages (Login) will just render inside body -->
+    <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+<?php endif; ?>
+<?php
+}
+// ==========================================
+// LAYOUT: FOOTER
+// ==========================================
+function renderFooter(): void {
+    $role = currentRole();
+?>
+<?php if ($role): ?>
+        </div>
+    </main>
+</div>
+<?php else: ?>
+    </div> <!-- close non-auth flex container -->
+<?php endif; ?>
+<script>
+    // JS INLINE
+    function confirmDel(formId) {
+        if (confirm('Are you sure you want to delete this record?')) {
+            document.getElementById(formId).submit();
+        }
+    }
+</script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+</body>
+</html>
+<?php
+}
+?>
+<?php
+/**
+ * index.php
+ * Main entry point and router for College ERP (Compact 5-File Version)
+ */
+require_once __DIR__ . '/core.php';
+require_once __DIR__ . '/admin.php';
+require_once __DIR__ . '/portals.php';
+$page = $_GET['page'] ?? 'login';
+// Routing Switch
+switch ($page) {
+    case 'login':
+        if (currentUserId()) {
+            $r = currentRole();
+            redirect('?page=' . ($r==='admin' ? 'admin_dash' : ($r==='teacher' ? 'teacher_dash' : 'student_dash')));
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = trim($_POST['email'] ?? '');
+            $pass = $_POST['password'] ?? '';
+            
+            $u = dbFetchOne("SELECT * FROM users WHERE email=? AND is_active=1", [$email]);
+            if ($u && password_verify($pass, $u['password_hash'])) {
+                $_SESSION['user_id'] = $u['id'];
+                $_SESSION['user_role'] = $u['role'];
+                dbExecute("UPDATE users SET last_login=NOW() WHERE id=?", [$u['id']]);
+                
+                if ($u['role'] === 'student') {
+                    $ent = dbFetchOne("SELECT id FROM students WHERE user_id=?", [$u['id']]);
+                } else if ($u['role'] === 'teacher') {
+                    $ent = dbFetchOne("SELECT id FROM teachers WHERE user_id=?", [$u['id']]);
+                } else {
+                    $ent = ['id'=>0];
+                }
+                $_SESSION['entity_id'] = $ent['id'] ?? 0;
+                
+                redirect('?page=' . ($u['role']==='admin' ? 'admin_dash' : ($u['role']==='teacher' ? 'teacher_dash' : 'student_dash')));
+            }
+            setFlash('danger', 'Invalid credentials');
+            redirect('?page=login');
+        }
+        
+        renderHeader('Login');
+        ?>
+        <div class="erp-card" style="width:100%;max-width:400px;">
+            <div class="erp-card-header text-center">
+                <h2><?= esc(APP_NAME) ?></h2>
+                <p>Login to your account</p>
+            </div>
+            <div class="erp-card-body">
+                <form method="POST">
+                    <input type="email" name="email" class="erp-form-control" placeholder="Email Address" required>
+                    <input type="password" name="password" class="erp-form-control" placeholder="Password" required>
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Sign In</button>
+                </form>
+            </div>
+        </div>
+        <?php
+        renderFooter();
+        break;
+    case 'logout':
+        session_destroy();
+        header('Location: ?page=login');
+        exit;
+    // Admin Routes
+    case 'admin_dash':     handleAdminDashboard(); break;
+    case 'admin_depts':    handleAdminDepts(); break;
+    case 'admin_subjects': handleAdminSubjects(); break;
+    case 'admin_teachers': handleAdminTeachers(); break;
+    case 'admin_students': handleAdminStudents(); break;
+    case 'admin_exams':    handleAdminExams(); break;
+    case 'admin_fees':     handleAdminFees(); break;
+    case 'admin_timetable':handleAdminTimetable(); break;
+    // Portals
+    case 'teacher_dash':   handleTeacherDashboard(); break;
+    case 'student_dash':   handleStudentDashboard(); break;
+    case 'portal_mark_att':handlePortalMarkAtt(); break;
+    case 'portal_marks_entry':handlePortalMarksEntry(); break;
+    case 'portal_marksheet':handlePortalMarksheet(); break;
+    case 'portal_timetable':handlePortalTimetable(); break;
+    default:
+        die('<h2>404 Page Not Found</h2>');
+}
+<?php
+/**
+ * portals.php
+ * Student and Teacher Portals for College ERP
+ */
+if (!defined('APP_NAME')) die();
+function handleTeacherDashboard() {
+    requireLogin('teacher');
+    $tid = entityId();
+    $subs = dbFetchAll("SELECT * FROM subjects WHERE teacher_id=?", [$tid]);
+    
+    renderHeader('Teacher Dashboard');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-header">My Subjects</div>
+        <div class="erp-card-body p-0">
+            <table class="erp-table">
+                <tr><th>Code</th><th>Name</th><th>Action</th></tr>
+                <?php foreach($subs as $s): ?>
+                    <tr>
+                        <td><?= esc($s['sub_code']) ?></td>
+                        <td><?= esc($s['sub_name']) ?></td>
+                        <td>
+                            <a href="?page=portal_mark_att&sub=<?= $s['id'] ?>" class="btn btn-primary btn-sm">Attendance</a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handleStudentDashboard() {
+    requireLogin('student');
+    $sid = entityId();
+    $student = dbFetchOne("SELECT * FROM students WHERE id=?", [$sid]);
+    
+    renderHeader('Student Dashboard');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-body text-center">
+            <h2><?= esc($student['name']) ?></h2>
+            <p><?= esc($student['roll_number']) ?></p>
+            <a href="?page=portal_marksheet" class="btn btn-primary mt-3">View Marksheet</a>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handlePortalMarkAtt() {
+    requireLogin();
+    renderHeader('Mark Attendance');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-body">
+            <p>Attendance module placeholder. In a full system, this would load students for the selected subject and date.</p>
+            <a href="?page=<?= currentRole()==='teacher'?'teacher_dash':'admin_dash' ?>" class="btn btn-primary">Back</a>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handlePortalMarksEntry() {
+    requireLogin();
+    renderHeader('Enter Marks');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-body">
+            <p>Marks entry module placeholder.</p>
+            <a href="?page=<?= currentRole()==='teacher'?'teacher_dash':'admin_dash' ?>" class="btn btn-primary">Back</a>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handlePortalMarksheet() {
+    requireLogin();
+    renderHeader('Marksheet');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-body text-center">
+            <h2>Marksheet</h2>
+            <p>Select exam to view marks. Placeholder.</p>
+            <button class="btn btn-primary" onclick="window.print()">Print</button>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
+function handlePortalTimetable() {
+    requireLogin();
+    renderHeader('My Timetable');
+    ?>
+    <div class="erp-card">
+        <div class="erp-card-body">
+            <p>Timetable view placeholder.</p>
+        </div>
+    </div>
+    <?php
+    renderFooter();
+}
