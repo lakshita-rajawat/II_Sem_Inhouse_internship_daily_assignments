@@ -1,0 +1,602 @@
+<?php
+include("db_connect.php");
+$error="";
+
+
+if ($_SERVER["REQUEST_METHOD"] == "POST"){
+    
+    
+    $email = mysqli_real_escape_string($conn, $_POST['email']); 
+    $password = mysqli_real_escape_string($conn, $_POST['password']);
+    
+    if ( $email == "" || $password =="" ){
+
+     $error = "All fields are required.";
+        echo $error;
+    }
+     else {
+        $selectQuery = "Select * from user where email='$email' and password='$password'";
+        $result= mysqli_query($conn,$selectQuery);
+
+
+        if ($result && mysqli_num_rows($result) == 1) {
+            
+            $user = mysqli_fetch_assoc($result);
+
+           
+            session_start();
+
+            $_SESSION['user_id']    = $user['id'];
+            $_SESSION['user_name']  = $user['name']; // This completely fixes the warning!
+            $_SESSION['user_email'] = $user['email'];
+
+            header("Location: dashboard.php");
+            exit();
+        } else {
+            echo "Invalid Credentials";
+        }
+    }
+        
+}
+?>
+
+<?php
+include("db_connect.php");
+$error="";
+
+
+if ($_SERVER["REQUEST_METHOD"] == "POST"){
+    
+    $name = mysqli_real_escape_string($conn, $_POST['name']);
+    $email = mysqli_real_escape_string($conn, $_POST['email']); 
+    $password = mysqli_real_escape_string($conn, $_POST['password']);
+    $confirm_password = mysqli_real_escape_string($conn, $_POST['confirm_password']);
+   
+    if ($name == "" || $email == "" || $password ==""|| $confirm_password==""){
+
+     $error = "All fields are required.";
+        echo $error;
+    }else if (strlen($password)<5|| !preg_match('/[0-9]/',$password)||!preg_match('/[^A-Z a-z 0-9]/',$password))
+    {
+       $error = "<div class='alert alert-danger mt-2'> Password must be at least 5 characters long, contain at least one number, and one special character.</div>";
+       echo $error;
+    }
+    else if ($password !== $confirm_password){
+        $error="Passwords do not match.";
+        echo $error;
+    }
+     else {
+        $insertQuery = "insert into user (name,email,password) values('$name','$email','$password')";
+        $result= mysqli_query($conn,$insertQuery);
+        if($result){
+            header("Location:success.php");
+            exit();
+        } else{
+            echo"Error occured while register" . mysqli_error($conn);
+        }
+       
+    }
+}
+?>
+
+<?php
+include("db_connect.php");
+$error="";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    $newPassword = mysqli_real_escape_string($conn, $_POST["newPassword"]);
+    $confirmPassword = mysqli_real_escape_string($conn, $_POST["confirmPassword"]);
+    $oldPassword = mysqli_real_escape_string($conn, $_POST["oldPassword"]);
+
+    if ($newPassword == "" || $oldPassword == "" || $confirmPassword == "") {
+        $error = "All fields are required.";
+        echo $error;
+    } elseif ($newPassword != $confirmPassword) {
+        $error = "Password does not match";
+        echo $error;
+    } else {
+        //insert
+        $selectQuery = "Select * from user where email='$email' and password = '$password'";
+
+        $result = mysqli_query($conn, $selectQuery);
+        $user = mysqli_fetch_assoc($result);
+
+        if ($user) {
+            
+            session_start();
+
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_name'] = $user['name'];
+            $_SESSION['user_email'] = $user['email'];
+            header("Location: dashboard.php");
+    exit();
+}elseif ($user){
+
+}
+else{
+    echo "Invalid Credentials";
+<?php
+include("headerDashboard.php");
+
+session_start();
+
+ 
+
+if (!isset($_SESSION['user_email'])) {
+    
+    header("Location: login.php");
+    exit();
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <!-- Link your bootstrap CSS here if you want -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <div class="container mt-5 text-center">
+        <div class="card p-5 shadow-sm">
+            <h1>Welcome to your Dashboard!</h1>
+            <p class="text-muted">Logged in as: <?php echo $_SESSION['user_email']; ?></p>
+            <br>
+            <a href="updatePassword.php" class="btn btn-warning w-25 mx-auto d-block mb-3">Update Password</a>
+            <a href="logout.php" class="btn btn-danger w-25 mx-auto">Logout</a>
+        </div>
+    </div>
+
+</body>
+</html>
+<?php
+$host="localhost";
+$user="root";
+$password="AruMan@123";
+$database="industrial_training";
+
+$conn = mysqli_connect($host,$user,$password,$database);
+
+if(!$conn){
+    die("connection Failed:" .
+    mysqli_connect_error());
+}
+
+echo "<p class='text-success m-0'>Connection Successful</p>";
+
+?>
+<footer class="bg-dark text-white text-center py-3 mt-5">
+    <p class="mb-0">&copy; <?php echo date("Y"); ?> My Website. All Rights Reserved.</p>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js">
+    
+</script>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport"
+        content = "wit=dth=device-width, initial-scale=1.0">
+        <title>My Website</title>
+         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+<body>
+    <header class="bg-light border-bottom">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center py-3">
+            <img src="img/logo.jpg" alt="logo" width="80">
+            
+            <nav>
+                <ul class="nav">
+                    <li class="nav-intem">
+                        <a href="index.php" class="nav-link text-dark">home</a>
+                     <li class="nav-intem">
+                        <a href="about.php" class="nav-link text-dark">about us</a>
+                     <li class="nav-intem">
+                        <a href="contact.php" class="nav-link text-dark">contact us</a>
+</ul>
+</nav>
+<button type="button" class="btn btn-primary" onclick="window.location.href='login.php'">login</button>
+
+</div>
+</div>
+</header>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport"
+        content = "wit=dth=device-width, initial-scale=1.0">
+        <title>My Website</title>
+         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+<body>
+    <header class="bg-light border-bottom">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center py-3">
+            <img src="img/logo.jpg" alt="logo" width="80">
+            
+            <nav>
+                <ul class="nav">
+                    <li class="nav-intem">
+                        <a href="index.php" class="nav-link text-dark">home</a>
+                     <li class="nav-intem">
+                        <a href="about.php" class="nav-link text-dark">about us</a>
+                     <li class="nav-intem">
+                        <a href="contact.php" class="nav-link text-dark">contact us</a>
+</ul>
+</nav>
+<button type="button" class="btn btn-primary" onclick="window.location.href='logout.php'">logout</button>
+
+</div>
+</div>
+</header>
+<?php
+session_start();
+include("db_connect.php");
+
+$error = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $password = mysqli_real_escape_string($conn, $_POST['password']);
+
+    if ($email == "" || $password == "") {
+        $error = "Please fill in all fields.";
+    } else {
+        
+        $query = "SELECT * FROM user WHERE email='$email' AND password='$password'";
+        $result = mysqli_query($conn, $query);
+
+        if (mysqli_num_rows($result) == 1) {
+            
+            $_SESSION['user_email'] = $email;
+            
+           
+            header("Location: dashboard.php");
+            exit();
+        } else {
+           
+            $error = "Invalid Email or Password.";
+        }
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <?php include("header.php"); ?>
+
+    <div class="container mt-5" style="max-width: 400px;">
+        <h2 class="text-center mb-4">Login</h2>
+
+        <?php if($error != ""): ?>
+            <div class="alert alert-danger"><?php echo $error; ?></div>
+        <?php endif; ?>
+
+        <!-- Make sure action is empty or points to login.php, and names match POST variables -->
+        <form action="login.php" method="POST">
+            <input type="email" name="email" class="form-control mb-3" placeholder="Email" required>
+            <input type="password" name="password" class="form-control mb-3" placeholder="Password" required>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+    </div>
+</body>
+</html>
+<?php
+session_start();
+$_SESSION = array();
+
+session_destroy(); // Destroy the active session
+
+// Redirect back to login screen
+header("Location: login.php");
+exit();
+?>
+<?php
+include("header.php");
+
+?>
+  <div class="container mt-5" style="max-width:400px;">
+        
+     <form action="checkRegistration.php" method="post">
+            <h3 class="mb-3">Register</h3>
+
+            <input type="text" name="name" class="form-control mb-3" placeholder="Name"  >
+            <input type="email" name="email" class="form-control mb-3" placeholder="Email"  >
+            <small class ="text  muted d-block mb-2" style="font size:0.85rem; text-align: left;">
+                *Password must be at least 5 characters long and contain at least one number
+                and one special character (e.g,@,#,$,%).</small>
+            <input type="password" name="password" class="form-control mb-3" placeholder="Password" >
+            <input type="password" name="confirm_password" class="form-control mb-3" placeholder="Confirm Password"  >
+           
+            <button class = "btn btn-primary w-100">Register</button>
+     </form>
+  </div>
+
+
+<?php
+include("footer.php");
+?>
+
+/* =========================
+   Google Font (Optional)
+========================= */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* =========================
+   Theme Variables
+========================= */
+:root {
+  --bg: #ffffff;
+  --text: #222;
+  --primary: #ff6f91;
+  --secondary: #ffb3c6;
+  --card: rgba(255, 255, 255, 0.7);
+  --glass: rgba(255, 255, 255, 0.3);
+}
+
+body.dark {
+  --bg: #121212;
+  --text: #f5f5f5;
+  --primary: #ff8fab;
+  --secondary: #6c63ff;
+  --card: rgba(255, 255, 255, 0.08);
+  --glass: rgba(255, 255, 255, 0.05);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  transition: 0.4s ease;
+}
+
+/* =========================
+   Loader
+========================= */
+#loader {
+  position: fixed;
+  width: 100%;
+  height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* =========================
+   Navbar
+========================= */
+.custom-nav {
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(10px);
+  transition: 0.3s;
+}
+
+.custom-nav .nav-link {
+  color: white !important;
+  margin: 0 8px;
+}
+
+.custom-nav .nav-link:hover {
+  color: var(--secondary) !important;
+}
+
+/* =========================
+   Hero Section
+========================= */
+.hero-section {
+  height: 100vh;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.hero-section h1 {
+  animation: fadeDown 1.2s ease;
+}
+
+.hero-section p {
+  animation: fadeUp 1.5s ease;
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================
+   Sections
+========================= */
+.section {
+  padding: 80px 0;
+}
+
+/* =========================
+   Navrasa Cards
+========================= */
+.rasa-card {
+  background: var(--card);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 30px;
+  font-size: 20px;
+  font-weight: 600;
+  transition: 0.4s ease;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.rasa-card:hover {
+  transform: translateY(-10px) scale(1.05);
+  background: var(--secondary);
+  color: white;
+}
+
+/* =========================
+   Timeline
+========================= */
+.timeline {
+  list-style: none;
+  padding-left: 0;
+  position: relative;
+}
+
+.timeline li {
+  padding: 15px;
+  margin: 10px 0;
+  background: var(--card);
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+}
+
+/* =========================
+   Forms
+========================= */
+form input {
+  border-radius: 10px !important;
+  padding: 10px;
+}
+
+/* =========================
+   Buttons
+========================= */
+.btn-primary {
+  background: var(--primary);
+  border: none;
+}
+
+.btn-primary:hover {
+  background: var(--secondary);
+}
+
+/* =========================
+   Scroll Progress Bar
+========================= */
+#progressBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 0%;
+  background: linear-gradient(to right, var(--primary), var(--secondary));
+  z-index: 9999;
+}
+
+/* =========================
+   Floating Petals
+========================= */
+body::before {
+  content: "";
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
+  opacity: 0.05;
+  z-index: -1;
+}
+
+.petal {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: pink;
+  border-radius: 50%;
+  animation: float 10s linear infinite;
+}
+
+@keyframes float {
+  from {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(110vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* =========================
+   Dark Mode Tweaks
+========================= */
+body.dark .custom-nav {
+  background: rgba(0,0,0,0.7);
+}
+
+body.dark .rasa-card {
+  box-shadow: 0 0 15px rgba(255,255,255,0.05);
+}
+
+/* =========================
+   Smooth Hover Transitions
+========================= */
+a, button, .rasa-card {
+  transition: all 0.3s ease;
+}
+
+/* =========================
+   Footer
+========================= */
+footer {
+  background: #111;
+}
+<?php
+include("header.php");
+
+?>
+<div class="container mt-5 text-center">
+    <div class="alert alert-success">
+        <h3>Registration Successful</h3>
+        <p>Your Form Has Been submitted Successfully.</p>
+    </div>
+    <a href="login.php" class="btn btn-primary">Go Back</a>
+</div>
+
+
+<?php
+include("footer.php");
+?>
+
+<?php
+include("header.php");
+?>
+
+<div class="container mt-5" style="max-width:400px;">
+    <form action="" method="post">
+        <h3 class="mb-3">Update Password</h3>
+        
+        <input type="password" name="oldpassword" class="form-control mb-3" placeholder="old Password">
+        <input type="password" name="newpassword" class="form-control mb-3" placeholder="new Password">
+        <input type="password" name="confirmPassword" class="form-control mb-3" placeholder="Confirm Password" >
+        <button class="btn btn-primary w-100">Update</button>
+</form>
+</div>
